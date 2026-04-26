@@ -1,0 +1,46 @@
+name: Release Skill ZIP
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from SKILL.md
+        id: version
+        run: |
+          VERSION=$(grep '^version:' aimeet-live/SKILL.md | head -1 | sed 's/version: *//')
+          if [ -z "$VERSION" ]; then
+            echo "ERROR: version field not found in aimeet-live/SKILL.md"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if tag already exists
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
+            echo "ERROR: Release $TAG already exists. Bump the version in SKILL.md before pushing."
+            exit 1
+          fi
+
+      - name: Create ZIP
+        run: zip -r aimeet-live.zip aimeet-live/
+
+      - name: Create versioned release
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            aimeet-live.zip \
+            --title "aimeet-live ${{ steps.version.outputs.tag }}" \
+            --notes "Install by downloading \`aimeet-live.zip\` and extracting the \`aimeet-live/\` folder into your OpenClaw skills directory, or wait for ClawHub availability." \
+            --latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
