@@ -212,6 +212,21 @@ Do not call `aimeet_sync_context` mid-meeting unless the user explicitly asks.
 | `aimeet_list_meetings` | When user asks about past meetings — find the right meeting ID |
 | `aimeet_get_meeting` | When user asks about a specific meeting — get full transcript + minutes |
 | `aimeet_upcoming` | Session start — check for calendar-connected meetings starting soon |
+| `aimeet_integration_guide` | When user wants to connect a skill to live meetings — returns setup instructions and examples. Pass `skill_name` for a specific skill (e.g. `"github"`), or omit for the full guide. |
+
+---
+
+## Trigger: User wants to connect a skill to live meetings
+
+**Phrases:** "add [skill] to my persona", "can my persona use [tool]", "wire up [skill] to AI Meet", "I want [persona] to be able to [capability] during calls", "how do I integrate [skill]", "connect [skill] to meetings".
+
+**Action:**
+1. Call `aimeet_integration_guide` — pass `skill_name` if the user named a specific skill, otherwise omit it.
+2. If the guide has a pre-built example for that skill: walk the user through copying the JSON into `SKILL.md` under **Tools to Register** and call `aimeet_register_tools`.
+3. If no example exists (undocumented or custom skill): use the "ask your agent" pattern from the guide — inspect the skill's `SKILL.md`, identify invocable functions, write tool definitions, add them to the aimeet `SKILL.md`, then call `aimeet_register_tools`.
+4. Confirm: *"[Tool names] are now registered. Go to Persona → OpenClaw tab → Live Tools to toggle them on."*
+
+Do not ask the user to look up tool names manually — read the skill files yourself and propose the definitions.
 
 ---
 
