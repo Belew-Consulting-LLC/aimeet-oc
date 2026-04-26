@@ -13,12 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Read version from SKILL.md
+      - name: Read version from _meta.json
         id: version
         run: |
-          VERSION=$(grep '^version:' aimeet-live/SKILL.md | head -1 | sed 's/version: *//')
-          if [ -z "$VERSION" ]; then
-            echo "ERROR: version field not found in aimeet-live/SKILL.md"
+          VERSION=$(jq -r '.version' aimeet/_meta.json)
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "ERROR: version field not found in aimeet/_meta.json"
             exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -28,19 +28,19 @@ jobs:
         run: |
           TAG="${{ steps.version.outputs.tag }}"
           if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
-            echo "ERROR: Release $TAG already exists. Bump the version in SKILL.md before pushing."
+            echo "ERROR: Release $TAG already exists. Bump the version in aimeet/_meta.json before pushing."
             exit 1
           fi
 
       - name: Create ZIP
-        run: zip -r aimeet-live.zip aimeet-live/
+        run: zip -r aimeet.zip aimeet/
 
       - name: Create versioned release
         run: |
           gh release create "${{ steps.version.outputs.tag }}" \
-            aimeet-live.zip \
-            --title "aimeet-live ${{ steps.version.outputs.tag }}" \
-            --notes "Install by downloading \`aimeet-live.zip\` and extracting the \`aimeet-live/\` folder into your OpenClaw skills directory, or wait for ClawHub availability." \
+            aimeet.zip \
+            --title "aimeet ${{ steps.version.outputs.tag }}" \
+            --notes "Install by downloading \`aimeet.zip\` and extracting the \`aimeet/\` folder into your OpenClaw skills directory. Full docs at https://aimeet.live/docs/openclaw" \
             --latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
